@@ -273,7 +273,7 @@ export class DiscordBot {
         client.on("userUpdate", async (_, user) => {
             try {
                 if (!(user instanceof Discord.User)) {
-                    log.warn(`Ignoring update for ${user.username}. User was partial.`);
+                    log.warn(`Ignoring update. User was partial.`);
                     return;
                 }
                 await this.userSync.OnUpdateUser(user);
@@ -282,7 +282,7 @@ export class DiscordBot {
         client.on("guildMemberAdd", async (member) => {
             try {
                 if (!(member instanceof Discord.GuildMember)) {
-                    log.warn(`Ignoring update for ${member.guild.id} ${member.id}. User was partial.`);
+                    log.warn(`Ignoring update. User was partial.`);
                     return;
                 }
                 await this.userSync.OnAddGuildMember(member);
@@ -291,7 +291,7 @@ export class DiscordBot {
         client.on("guildMemberRemove", async (member) =>  {
             try {
                 if (!(member instanceof Discord.GuildMember)) {
-                    log.warn(`Ignoring update for ${member.guild.id} ${member.id}. User was partial.`);
+                    log.warn(`Ignoring update. User was partial.`);
                     return;
                 }
                 await this.userSync.OnRemoveGuildMember(member);
@@ -300,7 +300,7 @@ export class DiscordBot {
         client.on("guildMemberUpdate", async (_, member) => {
             try {
                 if (!(member instanceof Discord.GuildMember)) {
-                    log.warn(`Ignoring update for ${member.guild.id} ${member.id}. User was partial.`);
+                    log.warn(`Ignoring update. User was partial.`);
                     return;
                 }
                 await this.userSync.OnUpdateGuildMember(member);
@@ -408,6 +408,31 @@ export class DiscordBot {
         this.channelLock.release(channel.id);
     }
 
+    public async getOrCreateWebhook(
+        chan: Discord.TextChannel
+    ): Promise<Discord.Webhook> {
+        const webhooks = await chan.fetchWebhooks();
+        let hook = webhooks.filter((h) => h.name === "_matrix").first();
+        // Create a new webhook if none already exists
+        try {
+            if (!hook) {
+                return await chan.createWebhook(
+                    "_matrix",
+                    {
+                        avatar: MATRIX_ICON_URL,
+                        reason: "Matrix Bridge: Allow rich user messages",
+                    });
+            }
+        } catch (err) {
+           // throw wrapError(err, Unstable.ForeignNetworkError, "Unable to create \"_matrix\" webhook");
+           log.warn("Unable to create _matrix webook:", err);
+        }
+        if (hook instanceof Discord.Webhook) {
+            return Promise.resolve(hook);
+        }
+        return Promise.reject();
+    }
+
     /**
      * Edits an event on Discord.
      * @throws {Unstable.ForeignNetworkError}
@@ -442,6 +467,19 @@ export class DiscordBot {
             }
         }
         try {
+            let hook = await this.getOrCreateWebhook(chan);
+            if (hook)
+            {
+                const embeds = this.prepareEmbedSetWebhook(embedSet)
+                hook.editMessage(oldMsg, embed.description, {
+                    avatarURL: embed!.author!.iconURL,
+                    embeds,
+                    files: opts.files,
+                    username: embed!.author!.name,
+                });
+                return;
+            }
+            // Don't have access to a webhook. Resort to old behavior.
             if (editEventId === this.lastEventIds[chan.id]) {
                 log.info("Immediate edit, deleting and re-sending");
                 this.channelLock.set(chan.id);
@@ -495,22 +533,7 @@ export class DiscordBot {
         let msg: Discord.Message | null | (Discord.Message | null)[] = null;
         let hook: Discord.Webhook | undefined;
         if (botUser) {
-            const webhooks = await chan.fetchWebhooks();
-            hook = webhooks.filter((h) => h.name === "_matrix").first();
-            // Create a new webhook if none already exists
-            try {
-                if (!hook) {
-                    hook = await chan.createWebhook(
-                        "_matrix",
-                        {
-                            avatar: MATRIX_ICON_URL,
-                            reason: "Matrix Bridge: Allow rich user messages",
-                        });
-                }
-            } catch (err) {
-               // throw wrapError(err, Unstable.ForeignNetworkError, "Unable to create \"_matrix\" webhook");
-               log.warn("Unable to create _matrix webook:", err);
-            }
+            hook = await this.getOrCreateWebhook(chan);
         }
         try {
             this.channelLock.set(chan.id);
