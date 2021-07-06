@@ -171,7 +171,7 @@ export class UserSyncroniser {
         try {
             await this.ApplyStateToRoom(state, roomId, guildId);
         } catch (e) {
-            if (e.errcode !== "M_FORBIDDEN") {
+            if ((e.errcode && e.errcode !== "M_FORBIDDEN") || (e.body && e.body.errcode !== "M_FORBIDDEN")) {
                 log.error(`Failed to join ${state.id} to ${roomId}`, e);
                 throw e;
             } else {
