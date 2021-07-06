@@ -45,20 +45,20 @@ export class MatrixMessageProcessor {
 
     public async FormatMessage(
         msg: IMatrixMessage,
-        guild: Discord.Guild,
+        channel: Discord.TextChannel,
         params?: IMatrixMessageProcessorParams,
     ): Promise<string> {
-        const opts = this.getParserOpts(msg, guild, params);
+        const opts = this.getParserOpts(msg, channel, params);
         return this.parser.FormatMessage(opts, msg);
     }
 
     private getParserOpts(
         msg: IMatrixMessage,
-        guild: Discord.Guild,
+        channel: Discord.TextChannel,
         params?: IMatrixMessageProcessorParams,
     ): IMatrixMessageParserOpts {
         return {
-            callbacks: this.getParserCallbacks(msg, guild, params),
+            callbacks: this.getParserCallbacks(msg, channel, params),
             determineCodeLanguage: this.config.bridge.determineCodeLanguage,
             displayname: params ? params.displayname || "" : "",
         };
@@ -66,7 +66,7 @@ export class MatrixMessageProcessor {
 
     private getParserCallbacks(
         msg: IMatrixMessage,
-        guild: Discord.Guild,
+        channel: Discord.TextChannel,
         params?: IMatrixMessageProcessorParams,
     ): IMatrixMessageParserCallbacks {
         return {
@@ -86,8 +86,7 @@ export class MatrixMessageProcessor {
             getChannelId: async (mxid: string) => {
                 const CHANNEL_REGEX = /^#_discord_[0-9]*_([0-9]*):/;
                 const match = mxid.match(CHANNEL_REGEX);
-                const channel = match && guild.channels.resolve(match[1]);
-                if (!channel) {
+                if (!(match && channel.guild.channels.resolve(match[1]))) {
                     /*
                     This isn't formatted in #_discord_, so let's fetch the internal room ID
                     and see if it is still a bridged room!
@@ -110,20 +109,21 @@ export class MatrixMessageProcessor {
                 let emoji: {id: string, animated: boolean, name: string} | null = null;
                 try {
                     const emojiDb = await this.bot.GetEmojiByMxc(mxc);
-                    const id = emojiDb.EmojiId;
-                    emoji = guild.emojis.resolve(id);
+                    const id = emojiDb.EmojiId;const hook = await this.bot.getOrCreateWebhook(channel);
+                    // Webhook ignores emote requirements - we can safely pass on a emote without proxying it to another site.
+                    emoji = hook ? {id: emojiDb.EmojiId, animated: emojiDb.Animated, name: emojiDb.Name} : channel.guild.emojis.resolve(id);
                 } catch (e) {
                     emoji = null;
                 }
                 if (!emoji) {
-                    emoji = guild.emojis.resolve(name);
+                    emoji = channel.guild.emojis.resolve(name);
                 }
                 return emoji;
             },
             getUserId: async (mxid: string) => {
                 const USER_REGEX = /^@_discord_([0-9]*)/;
                 const match = mxid.match(USER_REGEX);
-                const member = match && await guild.members.fetch(match[1]);
+                const member = match && await channel.guild.members.fetch(match[1]);
                 if (!match || !member) {
                     return null;
                 }

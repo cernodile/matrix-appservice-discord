@@ -300,7 +300,7 @@ export class MatrixEventProcessor {
         let body: string = "";
         if (event.type !== "m.sticker") {
             const content = event.content!["m.new_content"] ? event.content!["m.new_content"] : event.content;
-            body = await this.matrixMsgProcessor.FormatMessage(content as IMatrixMessage, channel.guild, params);
+            body = await this.matrixMsgProcessor.FormatMessage(content as IMatrixMessage, channel, params);
         }
 
         const messageEmbed = new Discord.MessageEmbed();
