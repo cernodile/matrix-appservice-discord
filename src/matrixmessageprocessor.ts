@@ -109,9 +109,10 @@ export class MatrixMessageProcessor {
                 let emoji: {id: string, animated: boolean, name: string} | null = null;
                 try {
                     const emojiDb = await this.bot.GetEmojiByMxc(mxc);
-                    const id = emojiDb.EmojiId;const hook = await this.bot.getOrCreateWebhook(channel);
+                    const id = emojiDb.EmojiId;
+                    const canUseExternal = channel.permissionsFor(channel.guild.id)?.has(Discord.Permissions.FLAGS.USE_EXTERNAL_EMOJIS) && await this.bot.getOrCreateWebhook(channel) != null;
                     // Webhook ignores emote requirements - we can safely pass on a emote without proxying it to another site.
-                    emoji = hook ? {id: emojiDb.EmojiId, animated: emojiDb.Animated, name: emojiDb.Name} : channel.guild.emojis.resolve(id);
+                    emoji = canUseExternal ? {id: emojiDb.EmojiId, animated: emojiDb.Animated, name: emojiDb.Name} : channel.guild.emojis.resolve(id);
                 } catch (e) {
                     emoji = null;
                 }
