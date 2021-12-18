@@ -143,6 +143,59 @@ export class MatrixCommandHandler {
                     }
                 },
             },
+            hardban: {
+                description: "Hardban an user Discord side, rather than per-channel",
+                params: ["userId"],
+                permission: {
+                    selfService: false,
+                    cat: "ban",
+                },
+                run: async ({userId}) => {
+                    if (!roomEntry || !roomEntry.remote) {
+                        return "This room is not bridged.";
+                    }
+                    if (!userId)
+                    {
+                        return "Invalid syntax. For more information try `!discord help hardban`";
+                    }
+                    const res = await this.discord.LookupRoom(
+                        roomEntry.remote.data.discord_guild!,
+                        roomEntry.remote.data.discord_channel!,
+                    );
+                    try {
+                        res.channel.guild.members.ban(userId, {reason: "Hardban from Matrix."});
+                        return "User banned.";
+                    } catch (e) {
+                        return "Couldn't ban user. Is the user in the server?";
+                    }
+                }
+            },
+            hardkick: {
+                description: "Hardkick an user Discord side, rather than per-channel",
+                params: ["userId"],
+                permission: {
+                    selfService: false,
+                    cat: "kick",
+                },
+                run: async ({userId}) => {
+                    if (!roomEntry || !roomEntry.remote) {
+                        return "This room is not bridged.";
+                    }
+                    if (!userId) {
+                        return "Invalid syntax. For more information try `!discord help hardkick`";
+                    }
+                    const res = await this.discord.LookupRoom(
+                        roomEntry.remote.data.discord_guild!,
+                        roomEntry.remote.data.discord_channel!,
+                    );
+                    try {
+                        (await res.channel.guild.members.fetch(userId)).kick("Hardkick from Matrix.");
+                        return "User kicked.";
+                    } catch (e) {
+                        return "Couldn't kick user. Is the user in the server?";
+                    }
+                }
+            }
         };
 
         /*
@@ -170,6 +223,12 @@ export class MatrixCommandHandler {
                     const parts = s.split("/");
                     guildIdRemainder = parts[1];
                     return parts[0];
+                },
+            },
+            userId: {
+                description: "The ID of a user on discord",
+                get: async (s) => {
+                    return s;
                 },
             },
         };

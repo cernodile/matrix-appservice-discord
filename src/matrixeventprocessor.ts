@@ -201,9 +201,10 @@ export class MatrixEventProcessor {
         const embedSet = await this.EventToEmbed(event, chan);
         const opts: Discord.MessageOptions = {};
         const file = await this.HandleAttachment(event, mxClient, roomLookup.canSendEmbeds);
-        if (typeof(file) === "string") {
-            embedSet.messageEmbed.description += " " + file;
+        if (typeof(file) === "string" && (file as string).length > 1) {
+            embedSet.messageEmbed.description = "Uploaded file too large. " + file;
         } else if ((file as Discord.FileOptions).name && (file as Discord.FileOptions).attachment) {
+            embedSet.messageEmbed.description = null; // unset "image.png".
             opts.files = [file as Discord.FileOptions];
         } else {
             embedSet.imageEmbed = file as Discord.MessageEmbed;

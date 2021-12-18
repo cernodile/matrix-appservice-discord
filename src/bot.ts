@@ -734,7 +734,7 @@ export class DiscordBot {
         }
         const tchan = (channel as Discord.TextChannel);
         const kickeeUser = await this.GetDiscordUserOrMember(
-            kickeeUserId.substring("@_discord_".length, kickeeUserId.indexOf(":") - 1),
+            kickeeUserId.substring("@_discord_".length, kickeeUserId.indexOf(":")),
             tchan.guild.id,
         );
         if (!kickeeUser) {
@@ -765,7 +765,7 @@ export class DiscordBot {
             log.warn("User isn't allowed to read anyway.");
             return;
         }
-        const word = `${kickban === "ban" ? "banned" : "kicked"}`;
+        const word = `${kickban === "ban" ? "banned" : "tempkicked"}`;
         this.channelLock.set(botChannel.id);
         res = await botChannel.send(
             `${kickee} was ${word} from this channel by ${kicker}.`
