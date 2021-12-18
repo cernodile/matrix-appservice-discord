@@ -745,13 +745,7 @@ export class DiscordBot {
         let res: Discord.Message;
         const botChannel = await this.GetChannelFromRoomId(roomId) as Discord.TextChannel;
         if (restore) {
-            await tchan.overwritePermissions([
-                {
-                    allow: ["SEND_MESSAGES", "VIEW_CHANNEL"],
-                    id: kickee.id,
-                }],
-                `Unbanned.`,
-            );
+            await tchan.updateOverwrite(kickee.id, {"SEND_MESSAGES": null, "VIEW_CHANNEL": null}, `Unbanned.`);
             this.channelLock.set(botChannel.id);
             res = await botChannel.send(
                 `${kickee} was unbanned from this channel by ${kicker}.`,
@@ -774,25 +768,12 @@ export class DiscordBot {
         this.sentMessages.push(res.id);
         this.channelLock.release(botChannel.id);
         log.info(`${word} ${kickee}`);
-
-        await tchan.overwritePermissions([
-            {
-                deny: ["SEND_MESSAGES", "VIEW_CHANNEL"],
-                id: kickee.id,
-            }],
-            `Matrix user was ${word} by ${kicker}.`,
-        );
+        await tchan.updateOverwrite(kickee.id, {"SEND_MESSAGES": false, "VIEW_CHANNEL": false}, `Matrix user was ${word} by ${kicker}.`);
         if (kickban === "leave") {
             // Kicks will let the user back in after ~30 seconds.
             setTimeout(async () => {
                 log.info(`Kick was lifted for ${kickee.displayName}`);
-                await tchan.overwritePermissions([
-                    {
-                        allow: ["SEND_MESSAGES", "VIEW_CHANNEL"],
-                        id: kickee.id,
-                    }],
-                    `Lifting kick since duration expired.`,
-                );
+                await tchan.updateOverwrite(kickee.id, {"SEND_MESSAGES": null, "VIEW_CHANNEL": null}, `Lifting kick since duration expired.`);
             }, this.config.room.kickFor);
         }
     }
@@ -1073,7 +1054,7 @@ export class DiscordBot {
                     res = await trySend();
                     await afterSend(res);
                 } catch (e) {
-                    if (e.errcode !== "M_FORBIDDEN" && e.errcode !==  "M_GUEST_ACCESS_FORBIDDEN") {
+                    if (e.body.errcode !== "M_FORBIDDEN" && e.body.errcode !==  "M_GUEST_ACCESS_FORBIDDEN") {
                         log.error("Failed to send message into room.", e);
                         return;
                     }
