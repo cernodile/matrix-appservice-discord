@@ -26,7 +26,7 @@ import { DbRoomStore } from "./db/roomstore";
 import { DbUserStore } from "./db/userstore";
 import { IAppserviceStorageProvider } from "matrix-bot-sdk";
 const log = new Log("DiscordStore");
-export const CURRENT_SCHEMA = 11;
+export const CURRENT_SCHEMA = 12;
 /**
  * Stores data for specific users and data not specific to rooms.
  */

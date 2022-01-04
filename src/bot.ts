@@ -19,6 +19,7 @@ import { DiscordClientFactory } from "./clientfactory";
 import { DiscordStore } from "./store";
 import { DbEmoji } from "./db/dbdataemoji";
 import { DbEvent } from "./db/dbdataevent";
+import { DbReaction } from "./db/dbreaction";
 import { DiscordMessageProcessor } from "./discordmessageprocessor";
 import { IDiscordMessageParserResult } from "matrix-discord-parser";
 import { MatrixEventProcessor, MatrixEventProcessorOpts, IMatrixEventProcessorResult } from "./matrixeventprocessor";
@@ -305,6 +306,24 @@ export class DiscordBot {
                 }
                 await this.userSync.OnUpdateGuildMember(member);
             } catch (err) { log.error("Exception thrown while handling \"guildMemberUpdate\" event", err); }
+        });
+        client.on("messageReactionAdd", async (reaction, member) => {
+            try {
+                if (!(member instanceof Discord.User)) {
+                    log.warn(`Ignoring update. User was partial.`);
+                    return;
+                }
+                this.OnMessageReactionAdd(reaction, member);
+            } catch (err) { log.error("Exception thrown while handling \"messageReactionAdd\" event", err); }
+        });
+        client.on("messageReactionRemove", async (reaction, member) => {
+            try {
+                if (!(member instanceof Discord.User)) {
+                    log.warn(`Ignoring update. User was partial.`);
+                    return;
+                }
+                this.OnMessageReactionRedact(reaction, member);
+            } catch (err) { log.error("Exception thrown while handling \"messageReactionRemove\" event", err); }
         });
         client.on("debug", (msg) => { jsLog.verbose(msg); });
         client.on("error", (msg) => { jsLog.error(msg); });
@@ -1054,7 +1073,8 @@ export class DiscordBot {
                     res = await trySend();
                     await afterSend(res);
                 } catch (e) {
-                    if (e.body.errcode !== "M_FORBIDDEN" && e.body.errcode !==  "M_GUEST_ACCESS_FORBIDDEN") {
+                    let error = (!e.body ? e.errcode : e.body.errcode);
+                    if (error !== "M_FORBIDDEN" && error !==  "M_GUEST_ACCESS_FORBIDDEN") {
                         log.error("Failed to send message into room.", e);
                         return;
                     }
@@ -1071,6 +1091,66 @@ export class DiscordBot {
         } catch (err) {
             MetricPeg.get.requestOutcome(msg.id, true, "fail");
             log.verbose("Failed to send message into room.", err);
+        }
+    }
+
+    private async OnMessageReactionAdd(reaction: Discord.MessageReaction, member: Discord.User) {
+        // Custom emotes are WIP.
+        if (reaction.emoji.id) {
+            return;
+        }
+        const intent = this.GetIntentFromDiscordMember(member);
+        const storeEvent = await this.store.Get(DbEvent, {discord_id: reaction.message.id});
+        if (storeEvent && storeEvent.Result) {
+            while (storeEvent.Next()) {
+                const matrixIds = storeEvent.MatrixId.split(";");
+                let room = matrixIds[1];
+                const sendContent = {
+                    "m.relates_to": {
+                        "rel_type": "m.annotation",
+                        "event_id": matrixIds[0],
+                        "key": reaction.emoji.name
+                    }
+                };
+                const trySend = async () =>  intent.underlyingClient.sendEvent(room, "m.reaction", sendContent);
+                const afterSend = async (eventId) => {
+                    this.lastEventIds[room] = eventId;
+                    const evt = new DbReaction;
+                    evt.EmojiId = reaction.emoji.name;
+                    evt.DiscordMsg = reaction.message.id;
+                    evt.DiscordUser = member.id;
+                    evt.EventID = `${eventId};${room}`;
+                    await this.store.Insert(evt);
+                }
+                let res;
+                try {
+                    res = await trySend();
+                    await afterSend(res);
+                } catch (e) {
+                    let error = (!e.body ? e.errcode : e.body.errcode);
+                    if (error !== "M_FORBIDDEN" && error !==  "M_GUEST_ACCESS_FORBIDDEN") {
+                        log.error("Failed to send reaction into room.");
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
+    private async OnMessageReactionRedact(reaction: Discord.MessageReaction, member: Discord.User) {
+        // Custom emotes are WIP.
+        if (reaction.emoji.id) {
+            return;
+        }
+        const intent = this.GetIntentFromDiscordMember(member);
+        const storeEvent = await this.store.Get(DbReaction, {discord_msg: reaction.message.id, discord_user: member.id, emoji_id: reaction.emoji.name});
+        if (storeEvent && storeEvent.Result) {
+            while (storeEvent.Next())
+            {
+                const matrixIds = storeEvent.EventID.split(";");
+                let res = await intent.underlyingClient.redactEvent(matrixIds[1], matrixIds[0]);
+                this.store.Delete(storeEvent);
+            }
         }
     }
 
