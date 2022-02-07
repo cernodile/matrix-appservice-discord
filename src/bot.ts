@@ -617,6 +617,7 @@ export class DiscordBot {
                 await msg.delete();
                 this.channelLock.release(msg.channel.id);
                 log.info(`Deleted message`);
+                storeEvent.Delete(this.store);
             } catch (ex) {
                 log.warn(`Failed to delete message`, ex);
             }
@@ -1096,9 +1097,9 @@ export class DiscordBot {
 
     private async OnMessageReactionAdd(reaction: Discord.MessageReaction, member: Discord.User) {
         // Custom emotes are WIP.
-        if (reaction.emoji.id) {
+        /*if (reaction.emoji.id) {
             return;
-        }
+        }*/
         const intent = this.GetIntentFromDiscordMember(member);
         const storeEvent = await this.store.Get(DbEvent, {discord_id: reaction.message.id});
         if (storeEvent && storeEvent.Result) {
@@ -1139,9 +1140,9 @@ export class DiscordBot {
 
     private async OnMessageReactionRedact(reaction: Discord.MessageReaction, member: Discord.User) {
         // Custom emotes are WIP.
-        if (reaction.emoji.id) {
+        /*if (reaction.emoji.id) {
             return;
-        }
+        }*/
         const intent = this.GetIntentFromDiscordMember(member);
         const storeEvent = await this.store.Get(DbReaction, {discord_msg: reaction.message.id, discord_user: member.id, emoji_id: reaction.emoji.name});
         if (storeEvent && storeEvent.Result) {
@@ -1194,6 +1195,7 @@ export class DiscordBot {
                     log.warn(`Failed to delete ${storeEvent.DiscordId}, giving up`);
                 }
             }
+            storeEvent.Delete(this.store);
         }
     }
 

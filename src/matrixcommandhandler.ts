@@ -158,12 +158,19 @@ export class MatrixCommandHandler {
                     {
                         return "Invalid syntax. For more information try `!discord help hardban`";
                     }
+                    const user = userId.split(" ")[0];
+                    const reason = userId.substring(user.length).trim();
                     const res = await this.discord.LookupRoom(
                         roomEntry.remote.data.discord_guild!,
                         roomEntry.remote.data.discord_channel!,
                     );
                     try {
-                        res.channel.guild.members.ban(userId, {reason: "Hardban from Matrix."});
+                        const member = await res.channel.guild.members.fetch(user);
+                        if (member && member.hasPermission("MANAGE_MESSAGES")) {
+                            return "User can't be banned - is a moderator or higher privileged user.";
+                        }
+                        res.channel.guild.members.ban(userId, {reason: `Matrix hardban from ${event.sender}. ${reason.length > 1 ? "Reason: " + reason : ""}`});
+                        res.channel.send(`${event.sender} banned user <@${userId}> (ID: ${userId}). ${reason.length > 1 ? "Reason: " + reason : ""}`);
                         return "User banned.";
                     } catch (e) {
                         return "Couldn't ban user. Is the user in the server?";
@@ -184,12 +191,19 @@ export class MatrixCommandHandler {
                     if (!userId) {
                         return "Invalid syntax. For more information try `!discord help hardkick`";
                     }
+                    const user = userId.split(" ")[0];
+                    const reason = userId.substring(user.length).trim();
                     const res = await this.discord.LookupRoom(
                         roomEntry.remote.data.discord_guild!,
                         roomEntry.remote.data.discord_channel!,
                     );
                     try {
-                        (await res.channel.guild.members.fetch(userId)).kick("Hardkick from Matrix.");
+                        const member = await res.channel.guild.members.fetch(user);
+                        if (member.hasPermission("MANAGE_MESSAGES")) {
+                            return "User can't be kicked - is a moderator or higher privileged user.";
+                        }
+                        member.kick(`Matrix hardkick from ${event.sender}. ${reason.length > 1 ? "Reason: " + reason : ""}`);
+                        res.channel.send(`${event.sender} kicked user <@${user}> (ID: ${user}). ${reason.length > 1 ? "Reason: " + reason : ""}`);
                         return "User kicked.";
                     } catch (e) {
                         return "Couldn't kick user. Is the user in the server?";
@@ -226,7 +240,7 @@ export class MatrixCommandHandler {
                 },
             },
             userId: {
-                description: "The ID of a user on discord",
+                description: "The ID of a user on discord + reason",
                 get: async (s) => {
                     return s;
                 },

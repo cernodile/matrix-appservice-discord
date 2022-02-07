@@ -18,7 +18,7 @@ import {IDbSchema} from "./dbschema";
 import {DiscordStore} from "../../store";
 import { Log } from "../../log";
 
-const log = new Log("SchemaV11");
+const log = new Log("SchemaV12");
 
 export class Schema implements IDbSchema {
     public description = "create reactions discord->matrix (ghost users)";
