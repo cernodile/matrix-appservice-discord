@@ -93,10 +93,14 @@ export class UserSyncroniser {
      * Should be called when the discord user is updated.
      * @param {module:discord.js.User} Old user object. If not used, new user object.
      * @param {module:discord.js.User} New user object
+     * @param {module:boolean} notLazy Is it a regular update or actual message?
      * @returns {Promise<void>}
      * @constructor
      */
-    public async OnUpdateUser(discordUser: User, isWebhook: boolean = false) {
+    public async OnUpdateUser(discordUser: User, isWebhook: boolean = false, notLazy: boolean = false) {
+        if (this.config.bridge.lazyLoadMemberUpdate && !notLazy) {
+            return;
+        }
         const userState = await this.GetUserUpdateState(discordUser, isWebhook);
         try {
             await this.ApplyStateToProfile(userState);
@@ -331,6 +335,9 @@ export class UserSyncroniser {
     }
 
     public async OnAddGuildMember(member: GuildMember) {
+        if (this.config.bridge.lazyLoadMemberUpdate) {
+            return;
+        }
         log.info(`Joining ${member.id} to all rooms for guild ${member.guild.id}`);
         await this.OnUpdateGuildMember(member, true, false);
     }
@@ -348,6 +355,9 @@ export class UserSyncroniser {
     }
 
     public async OnUpdateGuildMember(member: GuildMember, doJoin: boolean = false, useCache: boolean = true) {
+        if (this.config.bridge.lazyLoadMemberUpdate) {
+            return;
+        }
         log.info(`Got update for ${member.id} (${member.user.username}).`);
         const state = await this.GetUserStateForGuildMember(member);
         let wantRooms: string[] = [];

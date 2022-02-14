@@ -910,6 +910,9 @@ export class DiscordBot {
                 }, TYPING_TIMEOUT_MS);
             }
         } catch (err) {
+            if (err.body.errcode == "M_FORBIDDEN") {
+                return;
+            }
             log.warn("Failed to send typing indicator.", err);
         }
     }
@@ -950,7 +953,7 @@ export class DiscordBot {
         }
 
         // Update presence because sometimes discord misses people.
-        await this.userSync.OnUpdateUser(msg.author, Boolean(msg.webhookID));
+        await this.userSync.OnUpdateUser(msg.author, Boolean(msg.webhookID), true);
         let rooms: string[];
         try {
             rooms = await this.channelSync.GetRoomIdsFromChannel(msg.channel);
@@ -1103,6 +1106,8 @@ export class DiscordBot {
         const intent = this.GetIntentFromDiscordMember(member);
         const storeEvent = await this.store.Get(DbEvent, {discord_id: reaction.message.id});
         if (storeEvent && storeEvent.Result) {
+            // In case of a lazy load, update user profile
+            await this.userSync.OnUpdateUser(member, false, true);
             while (storeEvent.Next()) {
                 const matrixIds = storeEvent.MatrixId.split(";");
                 let room = matrixIds[1];
@@ -1146,6 +1151,8 @@ export class DiscordBot {
         const intent = this.GetIntentFromDiscordMember(member);
         const storeEvent = await this.store.Get(DbReaction, {discord_msg: reaction.message.id, discord_user: member.id, emoji_id: reaction.emoji.name});
         if (storeEvent && storeEvent.Result) {
+            // In case of a lazy load, update user profile
+            await this.userSync.OnUpdateUser(member, false, true);
             while (storeEvent.Next())
             {
                 const matrixIds = storeEvent.EventID.split(";");
@@ -1163,6 +1170,8 @@ export class DiscordBot {
         log.info(`Got edit event for ${newMsg.id}`);
         const storeEvent = await this.store.Get(DbEvent, {discord_id: oldMsg.id});
         if (storeEvent && storeEvent.Result) {
+            // In case of a lazy load, update user profile
+            await this.userSync.OnUpdateUser(newMsg.author, Boolean(newMsg.webhookID), true);
             while (storeEvent.Next()) {
                 const matrixIds = storeEvent.MatrixId.split(";");
                 await this.OnMessage(newMsg, matrixIds[0]);
