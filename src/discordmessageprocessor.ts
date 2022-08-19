@@ -85,6 +85,9 @@ export class DiscordMessageProcessor {
                     name,
                 };
             },
+            getReference: async (id: string) => {
+                return msg.channel.messages.resolve(id);
+            }
         };
     }
 

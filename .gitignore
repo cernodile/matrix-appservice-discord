@@ -49,3 +49,6 @@ build
 
 *.db
 *.db.backup
+
+package-lock.json
+yarn.lock
