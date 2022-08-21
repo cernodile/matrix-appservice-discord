@@ -45,7 +45,7 @@
     "js-yaml": "^3.14.0",
     "marked": "^1.2.2",
     "matrix-bot-sdk": "0.5.11",
-    "matrix-discord-parser": "github:cernodile/matrix-discord-parser#329be62e1725d4474969c12f5f447187753d6a98",
+    "matrix-discord-parser": "github:cernodile/matrix-discord-parser#322fb60e6d76c44edbc0e5cc7568176accad5ca5",
     "mime": "^2.4.6",
     "node-html-parser": "^1.2.19",
     "p-queue": "^6.4.0",
