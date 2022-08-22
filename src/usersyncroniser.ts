@@ -354,8 +354,8 @@ export class UserSyncroniser {
         );
     }
 
-    public async OnUpdateGuildMember(member: GuildMember, doJoin: boolean = false, useCache: boolean = true) {
-        if (this.config.bridge.lazyLoadMemberUpdate) {
+    public async OnUpdateGuildMember(member: GuildMember, doJoin: boolean = false, useCache: boolean = true, notLazy: boolean = false) {
+        if (this.config.bridge.lazyLoadMemberUpdate && !notLazy) {
             return;
         }
         log.info(`Got update for ${member.id} (${member.user.username}).`);
