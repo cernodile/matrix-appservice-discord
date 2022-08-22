@@ -1015,7 +1015,7 @@ export class DiscordBot {
                         });
                         this.lastEventIds[room] = eventId;
                         const evt = new DbEvent();
-                        evt.MatrixId = `${eventId};${room}`;
+                        evt.MatrixId = `${eventId};${room};1`;
                         evt.DiscordId = msg.id;
                         evt.ChannelId = msg.channel.id;
                         if (msg.guild) {
@@ -1178,9 +1178,18 @@ export class DiscordBot {
         const storeEvent = await this.store.Get(DbEvent, {discord_id: oldMsg.id});
         if (storeEvent && storeEvent.Result) {
             // In case of a lazy load, update user profile
-            await this.userSync.OnUpdateUser(newMsg.author, Boolean(newMsg.webhookID), true);
+            if (!newMsg.member)
+            {
+                await this.userSync.OnUpdateUser(newMsg.author, Boolean(newMsg.webhookID), true);
+            }
+            else
+            {
+                await this.userSync.OnUpdateGuildMember(newMsg.member, false, true, true);
+            }
             while (storeEvent.Next()) {
                 const matrixIds = storeEvent.MatrixId.split(";");
+                if (matrixIds.length > 2)
+                    continue; // HACK: likely attachment. ignore.
                 await this.OnMessage(newMsg, matrixIds[0]);
                 return;
             }
