@@ -109,6 +109,10 @@ export class UserSyncroniser {
         }
     }
 
+    public async IsRemoteUserValid(discordUser: User) {
+        return await this.userStore.getRemoteUser(discordUser.id) !== null;
+    }
+
     public async ApplyStateToProfile(userState: IUserState) {
         const intent = this.bridge.getIntentForUserId(userState.mxUserId);
         let userUpdated = false;
@@ -135,7 +139,7 @@ export class UserSyncroniser {
             userUpdated = true;
         }
 
-        if (userState.avatarUrl !== null) {
+        if (userState.avatarUrl !== null && userState.avatarUrl != remoteUser.avatarurl) {
             log.verbose(`Updating avatar_url for ${userState.mxUserId} to "${userState.avatarUrl}"`);
             const data = await Util.DownloadFile(userState.avatarUrl);
             const avatarMxc = await intent.underlyingClient.uploadContent(

@@ -376,15 +376,32 @@ export class MatrixEventProcessor {
             event.content = {};
         }
 
-        const relatesTo = event.content["m.relates_to"];
+        let relatesTo = event.content["m.relates_to"];
         let eventId = "";
-        if (relatesTo && relatesTo["m.in_reply_to"]) {
-            eventId = relatesTo["m.in_reply_to"].event_id;
+        const intent = this.bridge.botIntent;
+        if (relatesTo)
+        {
+            while (relatesTo.rel_type == "m.replace")
+            {
+                const sourceEvent = (await intent.underlyingClient.getEvent(event.room_id, relatesTo.event_id)) as IMatrixEvent;
+                if (!sourceEvent || !sourceEvent.content || !sourceEvent.content.body) {
+                    throw Error("No content could be found");
+                }
+                event = sourceEvent;
+                relatesTo = sourceEvent.content["m.relates_to"];
+                if (relatesTo["m.in_reply_to"]) {
+                    break;
+                }
+            }
+            if (relatesTo && relatesTo["m.in_reply_to"]) {
+                eventId = relatesTo["m.in_reply_to"].event_id;
+            } else {
+                return;
+            }
         } else {
             return;
         }
 
-        const intent = this.bridge.botIntent;
         // Try to get the event.
         try {
             const sourceEvent = (await intent.underlyingClient.getEvent(event.room_id, eventId)) as IMatrixEvent;
@@ -497,17 +514,18 @@ export class MatrixEventProcessor {
         // Are they a discord user.
         if (this.bridge.isNamespacedUser(sender)) {
             const localpart = Util.ParseMxid(sender).localpart;
-            const userOrMember = await this.discord.GetDiscordUserOrMember(localpart.substring("_discord".length));
-            if (userOrMember instanceof Discord.User) {
-                embed.setAuthor(
-                    userOrMember.username,
-                    userOrMember.avatarURL() || undefined,
-                );
-                return;
-            } else if (userOrMember instanceof Discord.GuildMember) {
+            const userOrMember = await this.discord.GetDiscordUserOrMember(localpart.substring("@_discord".length));
+            if (userOrMember instanceof Discord.GuildMember) {
                 embed.setAuthor(
                     userOrMember.displayName,
                     userOrMember.user.avatarURL() || undefined,
+                );
+                return;
+            }
+            else if (userOrMember instanceof Discord.User) {
+                embed.setAuthor(
+                    userOrMember.username,
+                    userOrMember.avatarURL() || undefined,
                 );
                 return;
             }

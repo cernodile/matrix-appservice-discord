@@ -959,6 +959,10 @@ export class DiscordBot {
         }
         else
         {
+            if (!await this.userSync.IsRemoteUserValid(msg.author)) {
+                // Rare scenario, but likely if reset db.
+                await this.userSync.OnUpdateUser(msg.author, Boolean(msg.webhookID), true);
+            }
             await this.userSync.OnUpdateGuildMember(msg.member, false, true, true);
         }
         let rooms: string[];
