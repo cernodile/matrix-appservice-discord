@@ -918,6 +918,9 @@ export class DiscordBot {
     }
 
     private async OnMessage(msg: Discord.Message, editEventId: string = "") {
+        if (msg.type == "GUILD_MEMBER_JOIN" || msg.type == "USER_PREMIUM_GUILD_SUBSCRIPTION") {
+            return;
+        }
         const indexOfMsg = this.sentMessages.indexOf(msg.id);
         if (indexOfMsg !== -1) {
             log.verbose("Got repeated message, ignoring.");
