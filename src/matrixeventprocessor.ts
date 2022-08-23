@@ -429,6 +429,11 @@ export class MatrixEventProcessor {
                     replyEmbed.description = `[${name}](${url})`;
                 }
             }
+
+            const storeEvent = await this.store.Get(DbEvent, {matrix_id: `${sourceEvent.event_id};${sourceEvent.room_id}`});
+            if (storeEvent && storeEvent.Result && storeEvent.Next()) {
+                replyEmbed.description += `\n**[Jump to message](https://discord.com/channels/${storeEvent.GuildId}/${storeEvent.ChannelId}/${storeEvent.DiscordId})**`;
+            }
             return replyEmbed;
         } catch (ex) {
             log.warn("Failed to handle reply, showing a unknown embed:", ex);
