@@ -385,10 +385,14 @@ export class UserSyncroniser {
             wantRooms.map(
                 async (roomId) => {
                     try {
-                        if (doJoin) {
-                            await this.JoinRoom(member, roomId);
-                        } else {
-                            await this.ApplyStateToRoom(state, roomId, member.guild.id);
+                        let channel = member.guild.channels.resolve(roomId);
+                        // don't bother updating or joining if can't even send messages.
+                        if (channel?.permissionsFor(member)?.has("SEND_MESSAGES")) {
+                            if (doJoin) {
+                                await this.JoinRoom(member, roomId);
+                            } else {
+                                await this.ApplyStateToRoom(state, roomId, member.guild.id);
+                            }
                         }
                     } catch (err) {
                         log.error(`Failed to update ${member.id} (${member.user.username}) in ${roomId}`, err);
