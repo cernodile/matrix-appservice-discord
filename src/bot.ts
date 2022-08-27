@@ -1074,6 +1074,12 @@ export class DiscordBot {
                         rel_type: "m.replace",
                     };
                 }
+                let checkForReply = result.body.split("\n");
+                if (checkForReply[checkForReply.length - 1].startsWith("**[Jump to message]"))
+                {
+                    checkForReply.pop();
+                    result.body = checkForReply.join("\n");
+                }
                 const trySend = async () =>  intent.sendEvent(room, sendContent);
                 const afterSend = async (eventId) => {
                     this.lastEventIds[room] = eventId;
