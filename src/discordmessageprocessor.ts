@@ -35,6 +35,7 @@ export class DiscordMessageProcessor {
     public async FormatMessage(msg: Discord.Message): Promise<IDiscordMessageParserResult> {
         const opts = {
             callbacks: this.getParserCallbacks(msg),
+            noEmbed: msg.webhookID,
         } as IDiscordMessageParserOpts;
         return await this.parser.FormatMessage(opts, msg);
     }
