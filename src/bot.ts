@@ -1040,7 +1040,6 @@ export class DiscordBot {
                 return;
             }
             await Util.AsyncForEach(rooms, async (room) => {
-                result.body = result.body.substring(0, result.body.lastIndexOf("\n**[Jump to message]("));
                 const sendContent: IMatrixMessage = {
                     body: result.body,
                     format: "org.matrix.custom.html",
