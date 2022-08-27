@@ -426,7 +426,13 @@ export class UserSyncroniser {
                     const rooms = await this.discord.GetRoomIdsFromGuild(guild, member!);
                     await Promise.all(
                         rooms.map(
-                            async (roomId) => this.ApplyStateToRoom(state, roomId, guild.id),
+                            async (roomId) => {
+                                let channel = guild.channels.resolve(roomId);
+                                // don't bother updating or joining if can't even send messages.
+                                if (channel?.permissionsFor(member!)?.has("SEND_MESSAGES")) {
+                                    this.ApplyStateToRoom(state, roomId, guild.id);
+                                }
+                            }
                         ),
                     );
                 } catch (err) {
