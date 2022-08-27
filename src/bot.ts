@@ -1040,6 +1040,7 @@ export class DiscordBot {
                 return;
             }
             await Util.AsyncForEach(rooms, async (room) => {
+                result.body = result.body.substring(0, result.body.lastIndexOf("\n**[Jump to message]("));
                 const sendContent: IMatrixMessage = {
                     body: result.body,
                     format: "org.matrix.custom.html",
@@ -1073,12 +1074,6 @@ export class DiscordBot {
                         event_id: editEventId,
                         rel_type: "m.replace",
                     };
-                }
-                let checkForReply = result.body.split("\n");
-                if (checkForReply[checkForReply.length - 1].startsWith("**[Jump to message]"))
-                {
-                    checkForReply.pop();
-                    result.body = checkForReply.join("\n");
                 }
                 const trySend = async () =>  intent.sendEvent(room, sendContent);
                 const afterSend = async (eventId) => {
