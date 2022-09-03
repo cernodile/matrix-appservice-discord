@@ -387,6 +387,10 @@ export class MatrixEventProcessor {
                 if (!sourceEvent || !sourceEvent.content || !sourceEvent.content.body) {
                     throw Error("No content could be found");
                 }
+                // bail out if no more chances to recurse.
+                if (sourceEvent.content["m.relates_to"]) {
+                    break;
+                }
                 event = sourceEvent;
                 relatesTo = sourceEvent.content["m.relates_to"];
                 if (relatesTo && relatesTo["m.in_reply_to"]) {
