@@ -379,7 +379,7 @@ export class MatrixEventProcessor {
         let relatesTo = event.content["m.relates_to"];
         let eventId = "";
         const intent = this.bridge.botIntent;
-        if (relatesTo)
+        if (relatesTo && relatesTo.rel_type)
         {
             while (relatesTo.rel_type == "m.replace")
             {
