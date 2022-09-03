@@ -389,7 +389,7 @@ export class MatrixEventProcessor {
                 }
                 event = sourceEvent;
                 relatesTo = sourceEvent.content["m.relates_to"];
-                if (relatesTo["m.in_reply_to"]) {
+                if (relatesTo && relatesTo["m.in_reply_to"]) {
                     break;
                 }
             }
