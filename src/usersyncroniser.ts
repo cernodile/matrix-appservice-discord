@@ -132,7 +132,7 @@ export class UserSyncroniser {
         }
         await intent.ensureRegistered();
 
-        if (userState.displayName !== null) {
+        if (userState.displayName !== null && userState.displayName != remoteUser.displayname) {
             log.verbose(`Updating displayname for ${userState.mxUserId} to "${userState.displayName}"`);
             await intent.underlyingClient.setDisplayName(userState.displayName);
             remoteUser.displayname = userState.displayName;
@@ -221,13 +221,13 @@ export class UserSyncroniser {
             "avatar_url": avatar,
             "displayname": memberState.displayName,
             "membership": "join",
-            "uk.half-shot.discord.member": {
+            /*"uk.half-shot.discord.member": {
                 bot: memberState.bot,
                 displayColor: memberState.displayColor,
                 id: memberState.id,
                 roles: memberState.roles,
                 username: memberState.username,
-            },
+            },*/
         });
 
         if (remoteUser) {
