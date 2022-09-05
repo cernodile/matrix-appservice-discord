@@ -1048,15 +1048,17 @@ export class DiscordBot {
                 };
                 if (msg.reference) {
                     const storeEvent = await this.store.Get(DbEvent, {discord_id: msg.reference?.messageID})
-                    if (storeEvent && storeEvent.Result)
-                    {
-                        while(storeEvent.Next())
-                        {
-                            sendContent["m.relates_to"] = {
-                                "m.in_reply_to": {
-                                    event_id: storeEvent.MatrixId.split(";")[0]
-                                }
-                            };
+                    if (storeEvent && storeEvent.Result) {
+                        while (storeEvent.Next()) {
+                            let ids = storeEvent.MatrixId.split(";");
+                            if (room == ids[1]) {
+                                sendContent["m.relates_to"] = {
+                                    "m.in_reply_to": {
+                                        event_id: ids[0]
+                                    }
+                                };
+                                break;
+                            }
                         }
                     }
                 }

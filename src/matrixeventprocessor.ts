@@ -379,31 +379,33 @@ export class MatrixEventProcessor {
         let relatesTo = event.content["m.relates_to"];
         let eventId = "";
         const intent = this.bridge.botIntent;
-        if (relatesTo && relatesTo.rel_type)
-        {
-            while (relatesTo.rel_type == "m.replace")
-            {
-                const sourceEvent = (await intent.underlyingClient.getEvent(event.room_id, relatesTo.event_id)) as IMatrixEvent;
-                if (!sourceEvent || !sourceEvent.content || !sourceEvent.content.body) {
-                    throw Error("No content could be found");
-                }
-                // bail out if no more chances to recurse.
-                if (!sourceEvent.content["m.relates_to"]) {
-                    break;
-                }
-                event = sourceEvent;
-                relatesTo = sourceEvent.content["m.relates_to"];
-                if (relatesTo && relatesTo["m.in_reply_to"]) {
-                    break;
+        if (!relatesTo) {
+            return;
+        } else {
+            // recurse through the events if someone by accident uses edit event id.
+            if (relatesTo.rel_type) {
+                while (relatesTo.rel_type == "m.replace") {
+                    const sourceEvent = (await intent.underlyingClient.getEvent(event.room_id, relatesTo.event_id)) as IMatrixEvent;
+                    if (!sourceEvent || !sourceEvent.content || !sourceEvent.content.body) {
+                        throw Error("No content could be found");
+                    }
+                    // bail out if no more chances to recurse.
+                    if (!sourceEvent.content["m.relates_to"]) {
+                        break;
+                    }
+                    event = sourceEvent;
+                    relatesTo = sourceEvent.content["m.relates_to"];
+                    if (relatesTo && relatesTo["m.in_reply_to"]) {
+                        break;
+                    }
                 }
             }
-            if (relatesTo && relatesTo["m.in_reply_to"]) {
+            // extract replied to id.
+            if (relatesTo["m.in_reply_to"]) {
                 eventId = relatesTo["m.in_reply_to"].event_id;
             } else {
                 return;
             }
-        } else {
-            return;
         }
 
         // Try to get the event.
