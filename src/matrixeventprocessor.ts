@@ -185,6 +185,10 @@ export class MatrixEventProcessor {
         const guildId = room.data.discord_guild!;
         const channelId = room.data.discord_channel!;
         const mxClient = this.bridge.botClient;
+        if (event.content && event.content["com.cernodile.nobridge"]) {
+            // this shouldn't be bridged
+            return;
+        }
         log.verbose(`Looking up ${guildId}_${channelId}`);
         const roomLookup = await this.discord.LookupRoom(guildId, channelId, event.sender);
         const chan = roomLookup.channel;
