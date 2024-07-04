@@ -33,7 +33,7 @@ import { TimedCache } from "./structures/timedcache";
 
 const log = new Log("MatrixEventProcessor");
 
-const MaxFileSize = 8000000;
+const MaxFileSize = 25000000;
 const MIN_NAME_LENGTH = 2;
 const MAX_NAME_LENGTH = 32;
 const DISCORD_AVATAR_WIDTH = 128;

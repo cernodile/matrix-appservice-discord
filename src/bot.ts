@@ -775,7 +775,7 @@ export class DiscordBot {
             return;
         }
         const existingPerms = tchan.permissionsFor(kickee);
-        if (existingPerms && existingPerms.has(Discord.Permissions.FLAGS.VIEW_CHANNEL as number) === false ) {
+        if (existingPerms && existingPerms?.has(Discord.Permissions.FLAGS.VIEW_CHANNEL as number) === false ) {
             log.warn("User isn't allowed to read anyway.");
             return;
         }
